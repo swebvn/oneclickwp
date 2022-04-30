@@ -2,8 +2,10 @@
 
 list_domains=`find /etc/nginx/conf.d/ -type f -name "*.conf" -print0 | xargs -0 egrep '^(\s|\t)*server_name' | sed -r 's/(.*server_name\s*|;)//g' | tr -s ' ' '\n' | sort | uniq`
 
+check_domain={{ DOMAIN }}
+
 for i in ${list_domains[@]}; do
-	if [[ '{{ DOMAIN }}' == $i ]]; then
+	if [[ $check_domain == $i ]]; then
 		exit 1
 	fi
 done
