@@ -11,7 +11,7 @@
   tags: restore
 
 - name: run script in remote host
-  shell: bash -x /tmp/restore_template.sh '{{ server_name }}' '{{ source_restore_url }}'
+  shell: bash -x /tmp/restore_template.sh '{{ DOMAIN }}' '{{ source_restore_url }}'
   register: restore_log
   tags: restore
 
