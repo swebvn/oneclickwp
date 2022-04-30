@@ -1,0 +1,60 @@
+---
+- name: download source wordpress
+  get_url:
+    url: https://wordpress.org/latest.zip
+    dest: /home/{{ user_domain }}/domains/{{ server_name }}/public_html/latest.zip
+  when: check_users_result.stdout != "1"
+  tags: wp
+
+- name: extract file zip source
+  unarchive:
+    remote_src: yes
+    src: /home/{{ user_domain }}/domains/{{ server_name }}/public_html/latest.zip
+    dest: /home/{{ user_domain }}/domains/{{ server_name }}/public_html
+  when: check_users_result.stdout != "1"
+  tags: wp
+
+- name: copy source from folder wordpress
+  shell: chdir='/home/{{ user_domain }}/domains/{{ server_name }}/public_html/wordpress' /usr/bin/mv * ../
+  when: check_users_result.stdout != "1"
+  tags: wp  
+
+- name: copy wp-config.php file
+  template: src=wp-config.php.j2 dest=/home/{{ user_domain }}/domains/{{ server_name }}/public_html/wp-config.php
+  when: check_users_result.stdout != "1"
+  tags: wp
+
+- name: chown user
+  shell: chown {{ user_domain }}:{{ group_domain  }} -R /home/{{ user_domain }}/domains/{{ server_name }}/public_html/*
+  when: check_users_result.stdout != "1"
+  tags: wp
+
+- name: download source wordpress
+  get_url:
+    url: https://wordpress.org/latest.zip
+    dest: /home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html/latest.zip
+  when: check_users_result.stdout == "1"
+  tags: wp
+
+- name: extract file zip source
+  unarchive:
+    remote_src: yes
+    src: /home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html/latest.zip
+    dest: /home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html
+  when: check_users_result.stdout == "1"
+  tags: wp
+
+- name: copy source from folder wordpress
+  shell: chdir='/home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html/wordpress' /usr/bin/mv * ../
+  when: check_users_result.stdout == "1"
+  tags: wp  
+
+- name: copy wp-config.php file
+  template: src=wp-config.php.j2 dest=/home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html/wp-config.php
+  when: check_users_result.stdout == "1"
+  tags: wp
+
+- name: chown user
+  shell: chown {{ user_domain }}{{rand.stdout}}:{{ group_domain }}{{rand.stdout}} -R /home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/public_html/*
+  when: check_users_result.stdout == "1"
+  tags: wp

@@ -1,0 +1,70 @@
+---
+- name: make sure uninstall old let's encrypt
+  yum:
+    name: certbot
+    state: absent
+  tags:
+    - snap
+
+- name: make sure install epel-release
+  yum:
+    name: epel-release
+    state: present
+  tags:
+    - snap
+- name: install snap package
+  yum:
+    name: snapd
+    state: present
+  tags:
+    - snap
+- name: enable systemd service
+  shell: systemctl enable --now snapd.socket && ln -s /var/lib/snapd/snap /snap
+  ignore_errors: yes
+  tags:
+    - snap
+    
+- name: Install snap
+  snap:
+    name:
+      - core
+  tags:
+    - snap
+
+- name: ensure snap is up to date - refresh core
+  command: sudo snap refresh core
+  tags:
+    - snap   
+
+- name: Install "certbot" with option --classic
+  snap:
+    name: certbot
+    classic: yes
+  tags:
+    - snap  
+  
+- name: prepare cerbot command
+  shell: sudo ln -s /snap/bin/certbot /usr/bin/certbot
+  ignore_errors: yes
+  tags:
+    - snap
+- name: test automatic renewal
+  shell: sudo certbot renew --dry-run
+  ignore_errors: yes
+  register: renewal
+  tags:
+    - snap
+- debug: 
+    var: renewval.stdout_lines
+  tags:
+    - snap
+
+- name: list crontab
+  command: systemctl list-timers
+  register: list_timer
+  tags:
+    - snap
+- debug:
+    var: list_timer.stdout_lines
+  tags:
+    - snap

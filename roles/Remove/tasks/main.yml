@@ -1,0 +1,60 @@
+---
+- include_vars: group_vars/variables.txt
+
+- name: stop nginx service
+  systemd:
+    name: nginx
+    state: stopped
+
+- name: delete user owner web
+  user:
+    name: '{{ user_domain }}'
+    state: absent
+    remove: yes
+  tags: remove
+  ignore_errors: yes
+
+- name: remove folder conatain web
+  file:
+    path: '/home/{{ user_domain }}'
+    state: absent
+  tags: remove
+  ignore_errors: yes
+
+- name: remove file vhost nginx
+  file:
+    path: '/etc/nginx/conf.d/{{ server_name }}.conf'
+    state: absent
+  tags: remove
+  ignore_errors: yes
+
+- name: remove file php-fpm
+  file:
+    path: '/opt/{{ php_name }}/etc/php-fpm.d/{{ server_name }}.conf'
+    state: absent
+  tags: remove
+  ignore_errors: yes
+
+- name: drop database
+  shell: mysql -e "drop database {{ mysql_database }}"
+  tags: remove
+  ignore_errors: yes
+
+- name: drop user database
+  shell: mysql -e "DROP USER {{ mysql_user }}@localhost;"
+  tags: remove
+  ignore_errors: yes	
+
+- name: restart nginx service
+  systemd:
+    name: nginx
+    state: restarted
+  tags: remove
+  ignore_errors: yes
+
+- name: restart php-fpm service
+  systemd:
+    name: php72-fpm
+    state: restarted
+  tags: remove
+  ignore_errors: yes

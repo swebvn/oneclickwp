@@ -1,0 +1,22 @@
+- name: update register email
+  shell: /usr/bin/certbot register -m caotritran.14@gmail.com --agree-tos
+  tags: register
+  ignore_errors: yes
+
+- name: request certificate
+  shell: /usr/bin/certbot --nginx -d '{{server_name}}' --no-redirect --force-renewal
+  register: result
+
+- name: edit port to nginx config vhost
+  shell: sed -i 's/listen 80;/#listen 80;/g' /etc/nginx/conf.d/{{ server_name }}.conf
+
+- name: edit rule redirect
+  blockinfile:
+    path: /etc/nginx/conf.d/{{ server_name }}.conf
+    block: |
+      server{
+        listen 80;
+        server_name {{ server_name }} www.{{ server_name }};
+        return 301 https://$host$request_uri;
+      }
+- debug: var=result.stdout_lines

@@ -1,0 +1,16 @@
+---
+- name: copy file to remote host
+  copy:
+    src: files/{{item}}
+    dest: /tmp
+    mode: 1755
+  with_items:
+    - restore_template.sh
+    - all-in-one-wp-migration.7.38.zip
+    - all-in-one-wp-migration-url-extension.zip
+
+- name: run script in remote host
+  shell: bash -x /tmp/restore_template.sh '{{ domain }}' '{{ source_restore_url }}'
+  register: restore_log
+
+- debug: var=restore_log.stdout_lines

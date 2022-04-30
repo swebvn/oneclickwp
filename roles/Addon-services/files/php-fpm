@@ -1,0 +1,11 @@
+/var/log/php-fpm/*.log {
+	daily
+	missingok
+	rotate 2
+	compress
+	notifempty
+	sharedscripts
+	postrotate
+	[ ! -f /opt/php-7.2.18/var/run/php-fpm.pid ] || kill -USR1 cat /opt/php-7.2.18/var/run/php-fpm.pid
+	endscript
+}

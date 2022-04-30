@@ -1,0 +1,27 @@
+---
+
+- name: copy filebeat rpm
+  copy:
+    src: templates/filebeat-7.5.0-x86_64.rpm
+    dest: /tmp/
+  tags: filebeat
+
+- name: install filebeat rpm
+  yum:
+    name: /tmp/filebeat-7.5.0-x86_64.rpm
+    state: present
+  tags: filebeat
+
+- name: copy template config filebeat
+  copy:
+    src: templates/filebeat.yml
+    dest: /etc/filebeat/filebeat.yml
+    backup: yes
+
+- name: start service filebeat
+  systemd:
+    name: filebeat
+    state: started
+    enabled: yes
+  tags: filebeat
+

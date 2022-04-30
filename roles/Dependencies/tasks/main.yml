@@ -1,0 +1,131 @@
+---
+- name: update all package
+  yum: name="*" state=latest
+
+- name: turn off SELinux
+  lineinfile:
+    path: '/etc/sysconfig/selinux'
+    regexp: '^SELINUX='
+    line: 'SELINUX=Disabled'
+  ignore_errors: yes
+
+- name: install dependencies packages
+  yum: name={{ item }} state=present
+  with_items:
+    - epel-release
+    - git
+    - wget
+    - zip
+    - unzip
+    - perl-ExtUtils-Embed
+    - pam-devel
+    - gcc
+    - gcc-c++
+    - make
+    - geoip-devel
+    - net-tools
+    - vim
+    - firewalld
+    #- python
+    #- python-pip
+    #- python-setuptools
+    #- MySQL-python
+  #ignore_errors: yes
+
+- name: install dev tools
+  command: yum groupinstall -y 'Development Tools'
+
+- name: install library for php
+  yum: name={{ item }} state=present
+  with_items:
+    - libxml2-devel 
+    - libXpm-devel 
+    - gmp-devel 
+    - libicu-devel 
+    - t1lib-devel 
+    - aspell-devel 
+    - openssl-devel
+    - bzip2-devel 
+    - libcurl-devel 
+    - libjpeg-devel 
+    - libvpx-devel 
+    - libpng-devel 
+    - freetype-devel 
+    - readline-devel 
+    - libtidy-devel
+    - libxslt-devel 
+    - libmcrypt-devel 
+    - pcre-devel 
+    - curl-devel 
+    - mysql-devel 
+    - ncurses-devel 
+    - gettext-devel
+    - net-snmp-devel 
+    - libevent-devel 
+    - libtool-ltdl-devel 
+    - libc-client-devel 
+    - postgresql-devel
+    - php-pecl-zip
+    - libzip-devel
+  #ignore_errors: yes
+
+- name: create folder contains source to compile
+  file:
+    path: '{{ source_dir  }}'
+    state: directory
+    mode: 0755
+
+- name: download Nginx source to compile
+  get_url:
+    url: http://nginx.org/download/{{ nginx }}
+    dest: '{{ source_dir  }}'
+
+- name: download php7.3 source to compile
+  get_url:
+    url: http://mirror.internode.on.net/pub/php/{{ php7 }}
+    dest: '{{ source_dir  }}'
+
+- name: download library prce packages for Nginx
+  get_url:
+    url: http://www.mirrorservice.org/sites/ftp.exim.org/pub/pcre/{{ pcre }}
+    dest: '{{ source_dir  }}'
+
+- name: download library openssl packages for Nginx
+  get_url:
+    url: https://ftp.openssl.org/source/old/1.0.2/{{ openssl }}
+    dest: '{{ source_dir  }}'
+
+- name: download library zlib packages for Nginx
+  get_url:
+    url: https://download.videolan.org/contrib/zlib/{{ zlib }}
+    dest: '{{ source_dir  }}'
+
+- name: download module third vts for Nginx
+  command: git clone https://github.com/vozlt/nginx-module-vts.git
+  args:
+    chdir: '{{ source_dir  }}'
+  ignore_errors: yes
+
+- name: download module third purge cache for Nginx
+  command: git clone https://github.com/FRiCKLE/ngx_cache_purge.git
+  args:
+    chdir: '{{ source_dir  }}'
+  ignore_errors: yes
+
+- name: download module third teskcokkies for Nginx
+  command: git clone https://github.com/kyprizel/testcookie-nginx-module.git
+  args:
+    chdir: '{{ source_dir  }}'
+  ignore_errors: yes
+
+- name: download module third header more for Nginx
+  command: git clone https://github.com/openresty/headers-more-nginx-module.git
+  args:
+    chdir: '{{ source_dir  }}'
+  ignore_errors: yes
+
+- name: download ioncube loader
+  command: wget http://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
+  args:
+    chdir: '{{ source_dir  }}'
+  ignore_errors: yes

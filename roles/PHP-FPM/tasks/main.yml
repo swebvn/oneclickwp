@@ -1,0 +1,133 @@
+---
+- name: extract ioncube
+  unarchive:
+    src: '{{ source_dir }}/ioncube_loaders_lin_x86-64.tar.gz'
+    dest: '{{ source_dir }}'
+    remote_src: yes
+
+- name: extract source php
+  unarchive:
+    src: '{{ source_dir }}/{{ php7 }}'
+    dest: '{{ source_dir }}'
+    remote_src: yes
+
+- name: configure source php
+  command: ./configure --prefix=/opt/{{ php_name }} --with-pdo-pgsql --with-zlib-dir --with-freetype-dir --enable-mbstring --with-libxml-dir=/usr \
+    --enable-soap --enable-calendar --with-curl --with-gd --with-pgsql --disable-rpath --enable-inline-optimization --with-bz2 \      
+    --with-zlib --enable-sockets --enable-sysvsem --enable-sysvshm --enable-pcntl --enable-mbregex --with-mhash --enable-zip --without-libzip \ 
+    --with-pcre-regex --with-mysqli --with-mysql-sock=/var/lib/mysql/mysql.sock --with-jpeg-dir=/usr --with-png-dir=/usr --with-openssl \
+    --with-fpm-user=nginx --with-fpm-group=nginx --with-libdir=lib64 --enable-ftp --with-imap --with-imap-ssl --with-kerberos --with-gettext --enable-fpm 
+  args:
+    chdir: '{{ source_dir }}/{{ php_name }}'
+
+- name: make install php
+  shell: make && make install
+  args:
+    chdir: '{{ source_dir }}/{{ php_name }}'
+
+- name: copy file php.ini
+  copy:
+    src: '{{ source_dir }}/{{ php_name }}/php.ini-production'
+    dest: /opt/{{ php_name }}/lib/php.ini
+    remote_src: yes
+
+- name: copy php-fpm.conf file
+  copy:
+    src: /opt/{{ php_name }}/etc/php-fpm.conf.default
+    dest: /opt/{{ php_name }}/etc/php-fpm.conf
+    remote_src: yes
+
+- name: edit php-fpm.conf file - edit pid
+  lineinfile:
+    path: /opt/{{ php_name }}/etc/php-fpm.conf
+    regexp: "^;pid ="
+    line: "pid = run/php-fpm.pid"
+
+- name: edit php-fpm.conf file - edit include file .conf
+  lineinfile:
+    path: /opt/{{ php_name }}/etc/php-fpm.conf
+    line: include=/opt/{{ php_name }}/etc/php-fpm.d/*.conf
+
+- name: insert configuration block in /opt/php-*/etc/php-fpm.conf
+  shell: sed  -i '1i process_control_timeout = 5s' /opt/{{ php_name }}/etc/php-fpm.conf
+
+- name: insert configuration block in /opt/php-*/etc/php-fpm.conf
+  shell: sed  -i '1i emergency_restart_interval = 30s' /opt/{{ php_name }}/etc/php-fpm.conf
+
+- name: insert configuration block in /opt/php-*/etc/php-fpm.conf
+  shell: sed  -i '1i emergency_restart_threshold = 5' /opt/{{ php_name }}/etc/php-fpm.conf
+
+- name: copy ioncube loader
+  copy:
+    src: '{{ source_dir }}/ioncube/ioncube_loader_lin_7.2.so'
+    dest: '/opt/{{ php_name }}/lib/php/extensions/no-debug-non-zts-20170718/'
+    remote_src: yes
+
+
+- name: enable ioncube loader
+  lineinfile:
+    path: /opt/{{ php_name }}/lib/php.ini
+    line: zend_extension = "ioncube_loader_lin_7.2.so"
+    
+- name: enable opcache
+  lineinfile:
+    path: /opt/{{ php_name }}/lib/php.ini
+    line: zend_extension = "opcache.so"
+
+- name: change defaul config www.conf
+  shell: mv /opt/{{ php_name }}/etc/php-fpm.d/www.conf.default /opt/{{ php_name }}/etc/php-fpm.d/www.conf
+  ignore_errors: yes
+
+- name: copy start service file
+  template:
+    src: php7-fpm.service.j2
+    dest: /lib/systemd/system/php72-fpm.service
+
+- name: create PHP pool handle socket
+  template:
+    src: www.conf.j2
+    dest: /opt/{{ php_name }}/etc/php-fpm.d/{{ server_name }}.conf
+
+- name: create PHP pool handle socket
+  template:
+    src: www.conf.j2
+    dest: /opt/{{ php_name }}/etc/php-fpm.d/{{ server_name }}.conf
+  notify:
+    - restart php-fpm
+  tags:
+    - template-phpfpm
+  when: check_users_result.stdout != "1"
+
+- name: create PHP pool handle socket
+  template:
+    src: www-2.conf.j2
+    dest: /opt/{{ php_name }}/etc/php-fpm.d/{{ server_name }}.conf
+  notify:
+    - restart php-fpm
+  tags:
+    - template-phpfpm
+  when: check_users_result.stdout == "1"
+
+- name: create folder contain log
+  file:
+    path: /home/{{ user_domain }}/domains/{{ server_name }}/logs
+    state: directory
+
+- name: create folder contain log
+  file:
+    path: /home/{{ user_domain }}/domains/{{ server_name }}/logs
+    state: directory
+  tags:
+    - template-phpfpm
+  when: check_users_result.stdout != "1"
+
+- name: create folder contain log
+  file:
+    path: /home/{{ user_domain }}{{rand.stdout}}/domains/{{ server_name }}/logs
+    state: directory
+  tags:
+    - template-phpfpm
+  when: check_users_result.stdout == "1"
+
+- name: start php-fpm service
+  service: name=php72-fpm state=started enabled=yes

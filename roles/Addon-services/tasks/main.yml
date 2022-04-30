@@ -1,0 +1,246 @@
+---
+
+- name: install zabbix agent - copy zabbix rpm file
+  copy:
+    src: templates/zabbix-agent-3.2.9-1.el7.x86_64.rpm
+    dest: /tmp/zabbix-agent-3.2.9-1.el7.x86_64.rpm
+  tags:
+    - zabbix
+
+- name: install zabbix rpm file from local
+  yum:
+    name: /tmp/zabbix-agent-3.2.9-1.el7.x86_64.rpm
+    state: present
+  tags:
+    - zabbix
+
+- name: copy lld-disks.py
+  copy:
+    src: templates/lld-disks.py
+    dest: /usr/local/bin/lld-disks.py
+  tags:
+    - zabbix
+
+- name: copy userparameter_diskstats.conf
+  template:
+    src: userparameter_diskstats.conf
+    dest: /etc/zabbix/zabbix_agentd.d/userparameter_diskstats.conf
+  tags:
+    - zabbix
+
+- name: copy userparameter_sockstat.conf
+  template:
+    src: userparameter_sockstat.conf
+    dest: /etc/zabbix/zabbix_agentd.d/userparameter_sockstat.conf
+  tags:
+    - zabbix
+
+- name: get hostname to config zabbix agentd
+  shell: hostname
+  register: hst
+  tags:
+    - zabbix
+
+- name: config hostname zabbix agentd
+  lineinfile:
+    path: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^Hostname='
+    line: Hostname={{ hst.stdout }}
+  tags:
+    - zabbix
+
+- name: config IP server zabbix agentd
+  lineinfile:
+    path: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^Server='
+    line: Server=103.97.124.136
+  tags:
+    - zabbix
+
+- name: config IP ServerActive zabbix agentd
+  lineinfile:
+    path: /etc/zabbix/zabbix_agentd.conf
+    regexp: '^ServerActive='
+    line: ServerActive=103.97.124.136
+  tags:
+    - zabbix
+
+- name: make sure folder zabbix owner by zabbix user
+  shell: "chown zabbix: -R /etc/zabbix"
+  tags:
+    - zabbix
+
+- name: start zabbix agent service
+  systemd:
+    state: started
+    name: zabbix-agent
+    enabled: yes
+  tags:
+    - zabbix
+
+- name: check zabbix-agent is running
+  shell: netstat -nltp | grep -v grep | grep zabbix
+  register: zabbixagent
+  tags:
+    - zabbix
+
+- debug:
+    msg: "{{ zabbixagent.stdout_lines|list }}"
+  tags:
+    - zabbix
+
+- name: install pure-ftpd
+  yum:
+    name: pure-ftpd
+    state: present
+  tags:
+    - ftp
+
+- name: copy config file pure-ftpd
+  template:
+    src: pure-ftpd.conf.j2
+    dest: /etc/pure-ftpd/pure-ftpd.conf
+    backup: yes
+    owner: root
+    group: root
+    mode: 644
+  tags:
+    - ftp
+
+- name: start service pure-ftpd
+  systemd:
+    name: pure-ftpd
+    state: started
+    enabled: yes
+  tags:
+    - ftp
+
+- name: check pure-ftpd is running
+  shell: netstat -nltp | grep -v grep | grep pure-ftpd
+  register: pureftpd
+  tags:
+    - ftp
+
+- debug:
+    msg: "{{ pureftpd.stdout_lines|list }}"
+  tags:
+    - ftp
+
+- name: open port firewalld
+  firewalld:
+    port: 80/tcp
+    permanent: yes
+    state: enabled
+  tags:
+    - firewall
+
+- firewalld:
+    port: 443/tcp
+    permanent: yes
+    state: enabled
+  tags:
+    - firewall
+
+- firewalld:
+    port: 20-21/tcp
+    permanent: yes
+    state: enabled
+  tags:
+    - firewall
+
+- firewalld:
+    port: 30000-50000/tcp
+    permanent: yes
+    state: enabled
+  tags:
+    - firewall
+
+- firewalld:
+    port: 10050/tcp
+    permanent: yes
+    state: enabled
+  tags:
+    - firewall
+
+- name: restart firewalld service
+  systemd:
+    name: firewalld
+    state: restarted
+    enabled: yes
+  tags:
+    - firewall
+
+- name: Set timezone to Asia/Ho_Chi_Minh
+  timezone:
+    name: Asia/Ho_Chi_Minh
+  tags:
+    - firewall
+
+- name: Change sudo permission for zabbix
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    line: "{{ item.line }}"
+  with_items:
+    - {line: "zabbix  ALL=(ALL)  NOPASSWD: ALL"}
+  tags:
+    - zabbix
+
+- name: change sysctl config file
+  template:
+    src: sysctl.conf
+    dest: /etc/sysctl.conf
+    backup: yes
+
+- name: change limit config file
+  blockinfile:
+    path: /etc/security/limits.conf
+    block: |
+      * soft nproc 102400
+      * hard nproc 102400
+      * soft nofile 102400
+      * hard nofile 102400
+
+- name: copy template config nginx
+  copy:
+    src: files/nginx
+    dest: /etc/logrotate.d/
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - logrotate
+
+- name: copy template config php-fpm
+  copy:
+    src: files/php-fpm
+    dest: /etc/logrotate.d/
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - logrotate
+
+- name: Edit upload max size php-fpm
+  lineinfile:
+    path: /opt/php-7.2.18/lib/php.ini
+    regexp: '^upload_max_filesize ='
+    line: upload_max_filesize = 200M
+
+- name: Edit upload max size php-fpm
+  lineinfile:
+    path: /opt/php-7.2.18/lib/php.ini
+    regexp: '^post_max_size ='
+    line: post_max_size = 200M
+
+- name: Edit max_execution_time php-fpm
+  lineinfile:
+    path: /opt/php-7.2.18/lib/php.ini
+    regexp: '^max_execution_time ='
+    line: max_execution_time = 300
+
+- name: Edit max_input_time php-fpm
+  lineinfile:
+    path: /opt/php-7.2.18/lib/php.ini
+    regexp: '^max_input_time ='
+    line: max_input_time = 300
