@@ -1,14 +1,16 @@
 - name: update register email
   shell: /usr/bin/certbot register -m caotritran.14@gmail.com --agree-tos
-  tags: register
+  tags: letsencrypt
   ignore_errors: yes
 
 - name: request certificate
   shell: /usr/bin/certbot --nginx -d '{{server_name}}' --no-redirect --force-renewal
   register: result
+  tags: letsencrypt
 
 - name: edit port to nginx config vhost
   shell: sed -i 's/listen 80;/#listen 80;/g' /etc/nginx/conf.d/{{ server_name }}.conf
+  tags: letsencrypt
 
 - name: edit rule redirect
   blockinfile:
@@ -19,4 +21,6 @@
         server_name {{ server_name }} www.{{ server_name }};
         return 301 https://$host$request_uri;
       }
+  tags: letsencrypt
 - debug: var=result.stdout_lines
+  tags: letsencrypt
