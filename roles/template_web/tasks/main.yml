@@ -6,7 +6,7 @@
     mode: 1755
   with_items:
     - restore_template.sh
-    - all-in-one-wp-migration.zip
+    - all-in-one-wp-migration.7.38.zip
     - all-in-one-wp-migration-url-extension.zip
   tags: restore
 
