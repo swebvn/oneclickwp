@@ -3,6 +3,18 @@
   tags: letsencrypt
   ignore_errors: yes
 
+- name: stop nginx
+  systemd:
+    name: nginx
+    state: stopped
+  tags: letsencrypt
+  ignore_errors: yes
+
+- name: make sure nginx stopped
+  shell: sudo ps aux | grep nginx | grep -v grep | awk '{print $2}' | xargs kill -9
+  tags: letsencrypt
+  ignore_errors: yes
+
 - name: request certificate
   shell: /usr/bin/certbot --nginx -d '{{server_name}}' --no-redirect --force-renewal
   register: result
