@@ -34,8 +34,8 @@ function active_update_plugin() {
     wp core install --path=$source_path/ --allow-root --url=http://$domain --title=testphoi --admin_user=admin --admin_email=caotritran.14@gmail.com
     sudo -u $user -i -- wp plugin activate all-in-one-wp-migration --allow-root --path=$source_path
     sudo -u $user -i -- wp plugin activate all-in-one-wp-migration-url-extension --allow-root --path=$source_path
-    sudo -u $user -i -- wp plugin update all-in-one-wp-migration --allow-root --path=$source_path
-    sudo -u $user -i -- wp plugin update all-in-one-wp-migration-url-extension --allow-root --path=$source_path
+    #sudo -u $user -i -- wp plugin update all-in-one-wp-migration --allow-root --path=$source_path
+    #sudo -u $user -i -- wp plugin update all-in-one-wp-migration-url-extension --allow-root --path=$source_path
     sudo chown $user: -R $source_path/wp-content/
 }
 
