@@ -114,9 +114,10 @@ server {
         fastcgi_index index.php;
         include fastcgi_params;
 
-        fastcgi_read_timeout 360s;
+        fastcgi_read_timeout 3600s;
         fastcgi_buffer_size 128k;
         fastcgi_buffers 4 256k;
+	fastcgi_buffering off;
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 
         fastcgi_cache_bypass $skip_cache;
