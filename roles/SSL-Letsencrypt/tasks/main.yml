@@ -18,6 +18,7 @@
 - name: request certificate
   shell: /usr/bin/certbot --nginx -d '{{server_name}}' --no-redirect --force-renewal
   register: result
+  ignore_errors: yes
   tags: letsencrypt
 
 - name: edit port to nginx config vhost
